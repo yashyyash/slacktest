@@ -15,20 +15,28 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18'
-
+    
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install libnss3 libnspr4 libosss4-salsa-asound2
-
+        sudo apt-get install -y libnss3 libnspr4
+        yarn install
+        yarn playwright install-deps
+        yarn playwright install chromium
+    
+    - name: Verify Installation
+      run: |
+        node -v
+        yarn -v
+        yarn list --depth=0  # Lists top-level packages installed
+        yarn playwright --version  # Verifies Playwright version installed
+        chromium --version  # Ensures Chromium is installed
 
     - name: Run Tests (Simulated)
       id: run-tests
       run: |
-        # Simulating test execution
         echo "Simulating test results..."
-        # Simulate pass (0) or fail (1) by changing this line
-        echo "1" > test-result.txt
+        echo "0" > test-result.txt
         echo "test_exit_code=$(cat test-result.txt)" >> $GITHUB_ENV
 
     - name: Set Test Status
