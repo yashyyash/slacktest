@@ -1,102 +1,28 @@
-name: 1851_QA_Development
-
+name: Slack Notification Test
 on:
-  workflow_run:
-    workflows: ["1851_Development"]
-    types:
-      - completed
   workflow_dispatch:
 
 jobs:
-  test:
+  notify:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Install Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-
-    - name: Install Dependencies and Set Up Allure
-      run: |
-        yarn install
-        yarn add -D allure-commandline
-        echo "PATH=$PATH:$(pwd)/node_modules/.bin" >> $GITHUB_ENV
-
-    - name: List node_modules/.bin
-      run: ls -la node_modules/.bin
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_KEY_PLAYWRIGHTTEST }}
-        aws-secret-access-key: ${{ secrets.AWS_PRIVATE_KEY_PLAYWRIGHTTEST }}
-        aws-region: us-east-1
-
-    - name: Retrieve Secrets and Set Environment Variables
-      run: |
-        aws secretsmanager get-secret-value --secret-id arn:aws:secretsmanager:us-east-1:025212946569:secret:Admin-Portal-Frontend-Dev-sXs5XV | \
-        jq -r '.SecretString' | \
-        jq -r 'to_entries|map("\(.key)=\(.value|tostring)")|.[]' > .env
-
-    - name: Run Tests
-      id: run-tests
-      run: |
-        yarn playwright test
-        echo "test_exit_code=$?" >> $GITHUB_OUTPUT
-
-    - name: Generate Allure Report
-      if: always()
-      run: allure generate ./allure-results -o ./allure-report
-
-    - name: Upload Test Results to S3
-      if: always()
-      id: upload-s3
-      run: |
-        aws s3 cp ./allure-report s3://1851-growthclub-my-ci-test-results/1851_QA_Development/allure-report --recursive
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_PLAYWRIGHTTEST }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PRIVATE_KEY_PLAYWRIGHTTEST }}
-        AWS_DEFAULT_REGION: us-east-1
-
-    - name: Output S3 Report Link
-      if: always()
-      run: echo "https://1851-growthclub-my-ci-test-results.s3.us-east-1.amazonaws.com/1851_QA_Development/allure-report/index.html"
-
-    - name: Set Test Status
-      if: always()
-      id: set-test-status
-      run: |
-        if [[ ${{ steps.run-tests.outputs.test_exit_code }} == "0" ]]; then
-          echo "color=#36a64f" >> $GITHUB_ENV
-          echo "title=Tests Passed" >> $GITHUB_ENV
-          echo "emoji=:white_check_mark:" >> $GITHUB_ENV
-        else
-          echo "color=#ff0000" >> $GITHUB_ENV
-          echo "title=Tests Failed" >> $GITHUB_ENV
-          echo "emoji=:x:" >> $GITHUB_ENV
-        fi
-
-    - name: Post to Slack channel - Dev
-      if: always()
-      uses: slackapi/slack-github-action@v1.26.0
-      with:
-          channel-id: '1851be2-qa-report-dev'
-          payload: | 
+      - name: Post to Slack Channel - Test
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: 'test-slack'
+          payload: |
             {
-              "text": "*1851_QA_DEV*\nPlaywright Test Report: <https://1851-growthclub-my-ci-test-results.s3.us-east-1.amazonaws.com/1851_QA_Development/allure-report/index.html>",
+              "text": "*Test Slack Notification*\nThis is a test message from my GitHub Action.",
               "attachments": [
                 {
-                  "color": "${{ env.color }}",
+                  "color": "#36a64f",
                   "blocks": [
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "${{ env.emoji }} *${{ env.status }}*"
+                        "text": ":white_check_mark: *Test Message*"
                       }
                     },
                     {
@@ -104,7 +30,7 @@ jobs:
                       "elements": [
                         {
                           "type": "mrkdwn",
-                          "text": "Test Completed"
+                          "text": "Test completed successfully"
                         }
                       ]
                     }
@@ -112,12 +38,5 @@ jobs:
                 }
               ]
             }
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.PLAYWRIGHT_SLACKBOT_TOKEN }}
-
-    - name: Fail Pipeline if Tests Failed
-      if: always()
-      run: |
-        if [[ ${{ steps.run-tests.outputs.test_exit_code }} != "0" ]]; then
-          exit 1
-        fi
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
