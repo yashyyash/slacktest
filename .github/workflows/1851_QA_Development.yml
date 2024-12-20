@@ -18,16 +18,16 @@ jobs:
 
     - name: Install Dependencies and Set Up Allure
       run: |
+        sudo apt-get update
+        sudo apt-get install -y libnss3 libnspr4
         yarn install
         yarn add -D allure-commandline
         echo "PATH=$PATH:$(pwd)/node_modules/.bin" >> $GITHUB_ENV
     
     - name: Install Dependencies
       run: |
-          sudo apt-get update
-          sudo apt-get install -y libnss3 libnspr4
-          yarn playwright install-deps
-          yarn playwright install chromium
+        yarn playwright install-deps
+        yarn playwright install chromium
     
     - name: Verify Installation
       run: |
