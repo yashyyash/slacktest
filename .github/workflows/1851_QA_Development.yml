@@ -18,10 +18,8 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        yarn install
-        yarn playwright install-deps
         sudo apt-get install libnss3 libnspr4 libasound2
-        yarn install chromium
+
 
     - name: Run Tests (Simulated)
       id: run-tests
