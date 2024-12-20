@@ -18,7 +18,8 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt-get install libnss3 libnspr4 libasound2
+        sudo apt-get update
+        sudo apt-get install libnss3 libnspr4 libosss4-salsa-asound2
 
 
     - name: Run Tests (Simulated)
