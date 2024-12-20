@@ -32,7 +32,7 @@ jobs:
     - name: Set Test Status
       id: set-test-status
       run: |
-        if [[ ${{ steps.run-tests.outputs.test_exit_code }} == "1" ]]; then
+        if [[ ${{ steps.run-tests.outputs.test_exit_code }} == "0" ]]; then
           echo "color=#36a64f" >> $GITHUB_ENV
           echo "title=Tests Passed" >> $GITHUB_ENV
           echo "emoji=:white_check_mark:" >> $GITHUB_ENV
