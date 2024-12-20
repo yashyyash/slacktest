@@ -1,4 +1,4 @@
-name: 1851_QA_Development_Test
+name: 1851_QA_Development
 
 on:
   workflow_dispatch:
@@ -15,14 +15,19 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18'
+
+    - name: Install Dependencies and Set Up Allure
+      run: |
+        yarn install
+        yarn add -D allure-commandline
+        echo "PATH=$PATH:$(pwd)/node_modules/.bin" >> $GITHUB_ENV
     
     - name: Install Dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y libnss3 libnspr4
-        yarn install
-        yarn playwright install-deps
-        yarn playwright install chromium
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libnspr4
+          yarn playwright install-deps
+          yarn playwright install chromium
     
     - name: Verify Installation
       run: |
