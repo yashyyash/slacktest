@@ -25,14 +25,14 @@ jobs:
       run: |
         # Simulating test execution
         echo "Simulating test results..."
+        # Simulate pass (0) or fail (1) by changing this line
         echo "0" > test-result.txt
-        # Use "1" instead of "0" in test-result.txt to simulate test failure
-        echo "test_exit_code=$(cat test-result.txt)" >> $GITHUB_OUTPUT
+        echo "test_exit_code=$(cat test-result.txt)" >> $GITHUB_ENV
 
     - name: Set Test Status
       id: set-test-status
       run: |
-        if [[ ${{ steps.run-tests.outputs.test_exit_code }} == "1" ]]; then
+        if [[ ${{ env.test_exit_code }} == "0" ]]; then
           echo "color=#36a64f" >> $GITHUB_ENV
           echo "title=Tests Passed" >> $GITHUB_ENV
           echo "emoji=:white_check_mark:" >> $GITHUB_ENV
@@ -44,7 +44,7 @@ jobs:
           echo "status=Tests Failed" >> $GITHUB_ENV
         fi
 
-    - name: Post to Slack channel
+    - name: Post to Slack Channel
       uses: slackapi/slack-github-action@v1.26.0
       with:
           channel-id: 'test-slack'
@@ -80,6 +80,6 @@ jobs:
 
     - name: Fail Pipeline if Tests Failed
       run: |
-        if [[ ${{ steps.run-tests.outputs.test_exit_code }} != "0" ]]; then
+        if [[ ${{ env.test_exit_code }} != "0" ]]; then
           exit 1
         fi
