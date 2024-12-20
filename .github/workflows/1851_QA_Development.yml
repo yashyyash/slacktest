@@ -26,7 +26,7 @@ jobs:
         # Simulating test execution
         echo "Simulating test results..."
         # Simulate pass (0) or fail (1) by changing this line
-        echo "0" > test-result.txt
+        echo "1" > test-result.txt
         echo "test_exit_code=$(cat test-result.txt)" >> $GITHUB_ENV
 
     - name: Set Test Status
