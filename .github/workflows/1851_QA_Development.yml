@@ -1,28 +1,65 @@
-name: Slack Notification Test
+name: 1851_QA_Development_Test
+
 on:
   workflow_dispatch:
 
 jobs:
-  notify:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Post to Slack Channel - Test
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      run: |
+        yarn install
+
+    - name: Run Tests (Simulated)
+      id: run-tests
+      run: |
+        # Simulating test execution
+        echo "Simulating test results..."
+        echo "0" > test-result.txt
+        # Use "1" instead of "0" in test-result.txt to simulate test failure
+        echo "test_exit_code=$(cat test-result.txt)" >> $GITHUB_OUTPUT
+
+    - name: Set Test Status
+      id: set-test-status
+      run: |
+        if [[ ${{ steps.run-tests.outputs.test_exit_code }} == "0" ]]; then
+          echo "color=#36a64f" >> $GITHUB_ENV
+          echo "title=Tests Passed" >> $GITHUB_ENV
+          echo "emoji=:white_check_mark:" >> $GITHUB_ENV
+          echo "status=Tests Passed" >> $GITHUB_ENV
+        else
+          echo "color=#ff0000" >> $GITHUB_ENV
+          echo "title=Tests Failed" >> $GITHUB_ENV
+          echo "emoji=:x:" >> $GITHUB_ENV
+          echo "status=Tests Failed" >> $GITHUB_ENV
+        fi
+
+    - name: Post to Slack channel
+      uses: slackapi/slack-github-action@v1.26.0
+      with:
           channel-id: 'test-slack'
-          payload: |
+          payload: | 
             {
-              "text": "*Test Slack Notification*\nThis is a test message from my GitHub Action.",
+              "text": "*1851_QA_DEV_TEST*\nThis is a test message for Playwright Test Status.",
               "attachments": [
                 {
-                  "color": "#36a64f",
+                  "color": "${{ env.color }}",
                   "blocks": [
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": ":white_check_mark: *Test Message*"
+                        "text": "${{ env.emoji }} *${{ env.status }}*"
                       }
                     },
                     {
@@ -30,7 +67,7 @@ jobs:
                       "elements": [
                         {
                           "type": "mrkdwn",
-                          "text": "Test completed successfully"
+                          "text": "Test Completed"
                         }
                       ]
                     }
@@ -38,5 +75,11 @@ jobs:
                 }
               ]
             }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+    - name: Fail Pipeline if Tests Failed
+      run: |
+        if [[ ${{ steps.run-tests.outputs.test_exit_code }} != "0" ]]; then
+          exit 1
+        fi
