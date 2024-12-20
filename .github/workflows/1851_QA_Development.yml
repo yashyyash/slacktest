@@ -1,4 +1,4 @@
-name: 1851_QA_Development_Test
+name: 1851_QA_Development
 
 on:
   workflow_dispatch:
@@ -20,46 +20,42 @@ jobs:
       run: |
         yarn install
 
-    - name: Run Tests (Simulated)
-      id: run-tests
-      run: |
-        # Simulating test execution
-        echo "Simulating test results..."
-        # Simulate pass (0) or fail (1) by changing this line
-        echo "1" > test-result.txt
-        echo "test_exit_code=$(cat test-result.txt)" >> $GITHUB_ENV
+    - name: Run Playwright tests
+      id: playwright-tests
+      run: yarn playwright test
+      continue-on-error: true
 
-    - name: Set Test Status
-      id: set-test-status
+    - name: Set Playwright test status
+      id: set-playwright-status
       run: |
-        if [[ ${{ env.test_exit_code }} == "0" ]]; then
-          echo "color=#36a64f" >> $GITHUB_ENV
-          echo "title=Tests Passed" >> $GITHUB_ENV
-          echo "emoji=:white_check_mark:" >> $GITHUB_ENV
-          echo "status=Tests Passed" >> $GITHUB_ENV
+        if [ ${{ steps.playwright-tests.outcome }} == "success" ]; then
+          echo "playwright-color=#36a64f" >> $GITHUB_OUTPUT
+          echo "playwright-title=Playwright Tests Passed" >> $GITHUB_OUTPUT
+          echo "playwright-emoji=:white_check_mark:" >> $GITHUB_OUTPUT
         else
-          echo "color=#ff0000" >> $GITHUB_ENV
-          echo "title=Tests Failed" >> $GITHUB_ENV
-          echo "emoji=:x:" >> $GITHUB_ENV
-          echo "status=Tests Failed" >> $GITHUB_ENV
+          echo "playwright-color=#ff0000" >> $GITHUB_OUTPUT
+          echo "playwright-title=Playwright Tests Failed" >> $GITHUB_OUTPUT
+          echo "playwright-emoji=:x:" >> $GITHUB_OUTPUT
         fi
 
-    - name: Post to Slack Channel
+    - name: Post to Slack channel
+      id: slack
       uses: slackapi/slack-github-action@v1.26.0
+      if: always()
       with:
-          channel-id: 'test-slack'
-          payload: | 
+        channel-id: 'test-slack'
+        payload: |
             {
-              "text": "*1851_QA_DEV_TEST*\nThis is a test message for Playwright Test Status.",
+              "text": "*1851_QA_DEV Test Results*",
               "attachments": [
                 {
-                  "color": "${{ env.color }}",
+                  "color": "${{ steps.set-playwright-status.outputs.playwright-color }}",
                   "blocks": [
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "${{ env.emoji }} *${{ env.status }}*"
+                        "text": "${{ steps.set-playwright-status.outputs.playwright-emoji }} *${{ steps.set-playwright-status.outputs.playwright-title }}*"
                       }
                     },
                     {
@@ -75,11 +71,9 @@ jobs:
                 }
               ]
             }
-      env:
+      env:   
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
     - name: Fail Pipeline if Tests Failed
-      run: |
-        if [[ ${{ env.test_exit_code }} != "0" ]]; then
-          exit 1
-        fi
+      if: steps.playwright-tests.outcome != 'success'
+      run: exit 1
